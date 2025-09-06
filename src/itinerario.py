@@ -11,7 +11,6 @@ HEADERS = {
 
 
 def unique_by_label(monuments):
-    """Rimuove duplicati mantenendo il primo monumento trovato per etichetta."""
     seen = set()
     result = []
     for m in monuments:
@@ -30,16 +29,7 @@ def fetch_monuments(city: str, limit: int = 100) -> List[Dict]:
 
 
 def plan_itinerary_by_popularity(monuments: List[Dict], days: int, per_day: int = 4) -> List[List[Dict]]:
-    """
-    Organizza l’itinerario distribuendo i monumenti per qualità (2 -> 1 -> 0).
-      - prima tutti i punteggio 2
-      - poi quelli con punteggio 1
-      - infine quelli con punteggio 0
-    Ogni categoria riparte dal giorno successivo all'ultimo usato.
 
-    """
-
-    # Classificazione per punteggio
     groups = {2: [], 1: [], 0: []}
     for m in monuments:
         score = quality_score(m)
@@ -48,20 +38,17 @@ def plan_itinerary_by_popularity(monuments: List[Dict], days: int, per_day: int 
     itinerary = [[] for _ in range(days)]
 
     def distribute(monuments_list, start_day, plan):
-        """Distribuisce i monumenti round-robin a partire da start_day."""
         day = start_day
         for monument in monuments_list:
-            # se un giorno ha già raggiunto il massimo, passa al successivo
             while len(plan[day]) >= per_day:
                 day = (day + 1) % days
             plan[day].append(monument)
             day = (day + 1) % days
-        return day  # giorno successivo all'ultimo usato
+        return day
 
-    # Distribuzione in ordine di qualità
-    next_day = distribute(groups[2], 0, itinerary)    # completi
-    next_day = distribute(groups[1], next_day, itinerary)  # parziali
-    distribute(groups[0], next_day, itinerary)             # incompleti
+    next_day = distribute(groups[2], 0, itinerary)
+    next_day = distribute(groups[1], next_day, itinerary)
+    distribute(groups[0], next_day, itinerary)
 
     return itinerary
 
@@ -70,7 +57,7 @@ def find_city_candidates(city_name: str) -> List[Dict[str, str]]:
 
     sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
     sparql.setReturnFormat(JSON)
-    sparql.setTimeout(120)  # aumentato il timeout per evitare interruzioni
+    sparql.setTimeout(120)
     sparql.agent = "Mozilla/5.0 (TRIPlanner/1.0)"
 
     city_name_normalized = unidecode(city_name.strip().lower())
@@ -94,7 +81,7 @@ def find_city_candidates(city_name: str) -> List[Dict[str, str]]:
 
     sparql.setQuery(query)
 
-    for attempt in range(3):  # fino a 3 tentativi
+    for attempt in range(3):
         try:
             res = sparql.query().convert()
             city_by_qid = {}
@@ -107,7 +94,7 @@ def find_city_candidates(city_name: str) -> List[Dict[str, str]]:
 
                 if not country:
                     continue
-                # Evita doppioni per lo stesso QID
+
                 if qid not in city_by_qid:
                     city_by_qid[qid] = {
                         "qid": qid,
@@ -131,7 +118,6 @@ def find_city_candidates(city_name: str) -> List[Dict[str, str]]:
 
 
 def get_city_qid(city_name: str) -> str:
-    """Restituisce il QID della città se esiste una sola corrispondenza esatta, altrimenti None."""
     cities = find_city_candidates(city_name)
     return cities[0]["qid"] if len(cities) == 1 else None
 

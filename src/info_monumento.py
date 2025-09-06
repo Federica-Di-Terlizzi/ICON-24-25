@@ -5,7 +5,6 @@ HEADERS = {"User-Agent": "TRIPlanner/1.0 (for academic use)"}
 
 
 def extract_description(binding):
-    """Estrae descrizione in IT se disponibile, altrimenti EN."""
     desc_it, desc_en = "", ""
     if "description" in binding:
         lang = binding["description"].get("xml:lang")
@@ -18,7 +17,6 @@ def extract_description(binding):
 
 
 def assign_source(data, fallback_data, source_name):
-    """Assegna la fonte ai dati di immagine o descrizione."""
     if not data and fallback_data:
         return fallback_data, source_name
     if data:
@@ -56,10 +54,6 @@ def _search_and_fetch_wikipedia(label: str, lang: str) -> Dict[str, str]:
 
 
 def _update_if_missing(data: Dict, js: Dict, lang: str, source_prefix: str):
-    """
-    Aggiorna i campi description/image SOLO se mancanti,
-    assegnando anche la fonte.
-    """
     if not data["description"] and js.get("description"):
         data["description"], data["description_source"] = assign_source(
             data["description"], js["description"], f"{source_prefix}-{lang}"
@@ -71,9 +65,6 @@ def _update_if_missing(data: Dict, js: Dict, lang: str, source_prefix: str):
 
 
 def get_monument_data(label: str, desc: str = None, img: str = None) -> Dict[str, str]:
-    """
-    Recupera dati completi di un monumento da Wikidata, Wikipedia e Commons.
-    """
     data = dict(
         label=label,
         description=None,
@@ -82,21 +73,17 @@ def get_monument_data(label: str, desc: str = None, img: str = None) -> Dict[str
         image_source="Nessuna"
     )
 
-    # Primo tentativo: Wikidata (se già forniti)
     data["description"], data["description_source"] = assign_source(desc, None, "Wikidata")
     data["image"], data["image_source"] = assign_source(img, None, "Wikidata")
 
-    # Wikipedia summary
     for lang in ["it", "en"]:
         js = _fetch_wikipedia_summary(label, lang)
         _update_if_missing(data, js, lang, "Wikipedia-summary")
 
-    # Wikipedia search
     for lang in ["it", "en"]:
         js = _search_and_fetch_wikipedia(label, lang)
         _update_if_missing(data, js, lang, "Wikipedia-search")
 
-    # Commons fallback (solo immagine)
     if not data["image"]:
         commons_url = "https://commons.wikimedia.org/w/api.php"
         params = {"action": "query", "titles": label, "prop": "pageimages",

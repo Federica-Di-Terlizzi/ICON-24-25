@@ -86,7 +86,7 @@ class InputPage(tk.Frame):
         self.selected_qid = None
         self.selected_city_name = None
         self._city_selection_active = False
-        self._city_lookup_active = False  # per evitare più query simultanee
+        self._city_lookup_active = False
 
         container = tk.Frame(self, bg="#3cb371")
         container.grid(row=0, column=0, sticky="nsew", padx=50, pady=30)
@@ -160,19 +160,16 @@ class InputPage(tk.Frame):
             messagebox.showerror("Input errato", "Inserisci un numero di giorni valido (≥1).")
             return
 
-        self.temp_days = days  # salva temporaneamente i giorni inseriti
+        self.temp_days = days
 
-        # Disabilita il bottone per evitare clic multipli
         self._disable_create_button()
 
-        # Se la città è già stata confermata, procedi subito
         if self.selected_qid:
             self.controller.city = self.selected_city_name
             self.controller.days = days
             self.controller.show_frame("LoadingPage")
             self.after(100, lambda: self.controller.fetch_and_generate_from_qid(self.selected_qid))
         else:
-            # Avvia il lookup città
             self._city_lookup_active = True
             self._show_loading_popup("Sto cercando la città...")
             threading.Thread(target=self._run_city_lookup_thread, args=(city,), daemon=True).start()
@@ -281,7 +278,6 @@ class InputPage(tk.Frame):
         self.loading_popup.iconphoto(False, self.icon_image)
         self._center_popup(self.loading_popup, width, height)
 
-        # Ricalcola posizione se la finestra principale cambia
         self.controller.bind("<Configure>", lambda e: self.safe_center_popup(self.loading_popup, width, height))
         tk.Label(self.loading_popup, text=message, font=("Helvetica", 12)).pack(expand=True, pady=20)
         self._disable_inputs()
@@ -350,11 +346,9 @@ class ResultPage(tk.Frame):
         self.grid_rowconfigure(1, minsize=50)
         self.grid_columnconfigure(0, weight=1)
 
-        # Container principale: canvas + scrollbar + bottone
         main_container = tk.Frame(self, bg="#3cb371")
         main_container.grid(row=0, column=0, sticky="nsew")
 
-        # Canvas con scroll
         self.canvas = tk.Canvas(main_container, bg="#3cb371")
         self.scroll_y = ttk.Scrollbar(main_container, orient="vertical", command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.scroll_y.set)
@@ -362,12 +356,10 @@ class ResultPage(tk.Frame):
         self.scroll_y.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
 
-        # Frame scrollabile
         self.frame = tk.Frame(self.canvas, bg="#3cb371")
         self.canvas.create_window((0, 0), window=self.frame, anchor="nw")
         self.frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
 
-        # Bottone fissato in basso
         self.bottom_btn_frame = tk.Frame(self, bg="#5f95b2")
         self.bottom_btn_frame.grid(row=1, column=0, sticky="nsew")
         self.bottom_btn_frame.grid_columnconfigure(0, weight=1)
@@ -400,16 +392,14 @@ class ResultPage(tk.Frame):
                 row = tk.Frame(self.frame, bg="#3cb371")
                 row.pack(fill="x", padx=50, pady=10)
 
-                # immagine
                 image = load_image_from_url(img_url) if img_url else None
                 if not image:
                     image = load_placeholder_image()
 
                 image_label = tk.Label(row, image=image, bg="#3cb371", width=120, height=120)
-                image_label.image = image  # evita garbage collection
+                image_label.image = image
                 image_label.pack(side="left", padx=(0, 15))
 
-                # dettagli
                 details = tk.Frame(row, bg="#3cb371")
                 details.pack(side="left", fill="both", expand=True)
 
